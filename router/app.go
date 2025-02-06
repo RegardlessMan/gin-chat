@@ -7,18 +7,20 @@
 package router
 
 import (
+	"ginChat/docs"
 	"ginChat/service"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Router() *gin.Engine {
+	// 集成swagger
+	docs.SwaggerInfo.BasePath = ""
 	r := gin.Default()
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	gin.SetMode(gin.DebugMode)
-	r.GET("/index", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	r.GET("/index", service.GetIndex)
 	// User-related api
 	r.GET("/user/list", service.GetUserList)
 
