@@ -23,6 +23,8 @@ func Router() *gin.Engine {
 	r.GET("/index", service.GetIndex)
 	// User-related api
 	r.GET("/user/list", service.GetUserList)
+	r.POST("/user/createUser", service.CreateUser)
+	r.DELETE("/user/deleteUser", service.DeleteUser)
 
 	return r
 }

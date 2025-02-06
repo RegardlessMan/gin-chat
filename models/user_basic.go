@@ -39,3 +39,11 @@ func GetUserList() []UserBasic {
 	}
 	return userList
 }
+
+func CreateUser(user UserBasic) *gorm.DB {
+	return global.DB.Create(&user)
+}
+
+func DeleteUser(user UserBasic) *gorm.DB {
+	return global.DB.Delete(&user)
+}
