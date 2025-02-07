@@ -8,6 +8,7 @@ package service
 
 import (
 	"ginChat/models"
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -30,11 +31,11 @@ func GetUserList(c *gin.Context) {
 // @Tags 首页
 // @Success 200 {string} welcome
 // @Router /index [get]
-func GetIndex(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
-}
+//func GetIndex(c *gin.Context) {
+//	c.JSON(200, gin.H{
+//		"message": "pong",
+//	})
+//}
 
 // CreateUser
 // @Summary 新增用户
@@ -49,6 +50,15 @@ func CreateUser(c *gin.Context) {
 	user.Name = c.Query("name")
 	password := c.Query("password")
 	repassword := c.Query("repassword")
+	u := models.FindUserByName(user.Name)
+	if u.Name != "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "用户名已存在",
+		})
+		return
+	}
+
 	if password != repassword {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    -1,
@@ -80,4 +90,38 @@ func DeleteUser(c *gin.Context) {
 		"code":    0,
 		"message": "delete user successful！",
 	})
+}
+
+// UpdateUser
+// @Summary 修改用户
+// @Tags 用户模块
+// @param id formData string false "id"
+// @param name formData string false "name"
+// @param password formData string false "password"
+// @param phone formData string false "phone"
+// @param email formData string false "email"
+// @Success 200 {string} json{"code","message"}
+// @Router /user/updateUser [post]
+func UpdateUser(c *gin.Context) {
+	user := models.UserBasic{}
+	id, _ := strconv.Atoi(c.PostForm("id"))
+	user.ID = uint(id)
+	user.Name = c.PostForm("name")
+	user.PassWord = c.PostForm("password")
+	user.Phone = c.PostForm("phone")
+	user.Avatar = c.PostForm("icon")
+	user.Email = c.PostForm("email")
+	_, err := govalidator.ValidateStruct(user)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "字段不符合预期",
+		})
+	} else {
+		models.UpdateUser(user)
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "update user successful！",
+		})
+	}
 }

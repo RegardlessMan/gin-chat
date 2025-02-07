@@ -44,6 +44,16 @@ func CreateUser(user UserBasic) *gorm.DB {
 	return global.DB.Create(&user)
 }
 
+func FindUserByName(name string) UserBasic {
+	user := UserBasic{}
+	global.DB.Debug().Where("name = ?", name).First(&user)
+	return user
+}
+
+func UpdateUser(user UserBasic) *gorm.DB {
+	return global.DB.Model(&user).Updates(UserBasic{Name: user.Name, PassWord: user.PassWord, Phone: user.Phone, Email: user.Email, Avatar: user.Avatar})
+}
+
 func DeleteUser(user UserBasic) *gorm.DB {
 	return global.DB.Delete(&user)
 }

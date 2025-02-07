@@ -20,11 +20,12 @@ func Router() *gin.Engine {
 	r := gin.Default()
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	gin.SetMode(gin.DebugMode)
-	r.GET("/index", service.GetIndex)
+	//r.GET("/index", service.GetIndex)
 	// User-related api
 	r.GET("/user/list", service.GetUserList)
 	r.POST("/user/createUser", service.CreateUser)
 	r.DELETE("/user/deleteUser", service.DeleteUser)
+	r.POST("/user/updateUser", service.UpdateUser)
 
 	return r
 }
