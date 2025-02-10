@@ -7,11 +7,16 @@
 package service
 
 import (
+	"fmt"
+	"ginChat/global"
 	"ginChat/models"
+	"ginChat/utils"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // GetUserList
@@ -50,6 +55,7 @@ func CreateUser(c *gin.Context) {
 	user.Name = c.Query("name")
 	password := c.Query("password")
 	repassword := c.Query("repassword")
+	salt := fmt.Sprintf("%06d", rand.Int31())
 	u := models.FindUserByName(user.Name)
 	if u.Name != "" {
 		c.JSON(http.StatusOK, gin.H{
@@ -65,30 +71,17 @@ func CreateUser(c *gin.Context) {
 			"message": "两次密码不一致",
 		})
 		return
-	} else {
-		user.PassWord = password
 	}
+	makePassword := utils.MakePassword(password, salt)
+	user.PassWord = makePassword
+	user.Salt = salt
+	user.LoginTime = time.Now()
+	user.LoginOutTime = time.Now()
+	user.HeartbeatTime = time.Now()
 	models.CreateUser(user)
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
 		"message": "create user successful！",
-	})
-}
-
-// DeleteUser
-// @Summary 删除用户
-// @Tags 用户模块
-// @param id query string false "用户id"
-// @Success 200 {string} json{"code","message"}
-// @Router /user/deleteUser [delete]
-func DeleteUser(c *gin.Context) {
-	user := models.UserBasic{}
-	id, _ := strconv.Atoi(c.Query("id"))
-	user.ID = uint(id)
-	models.DeleteUser(user)
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "delete user successful！",
 	})
 }
 
@@ -124,4 +117,58 @@ func UpdateUser(c *gin.Context) {
 			"message": "update user successful！",
 		})
 	}
+}
+
+// DeleteUser
+// @Summary 删除用户
+// @Tags 用户模块
+// @param id query string false "用户id"
+// @Success 200 {string} json{"code","message"}
+// @Router /user/deleteUser [delete]
+func DeleteUser(c *gin.Context) {
+	user := models.UserBasic{}
+	id, _ := strconv.Atoi(c.Query("id"))
+	user.ID = uint(id)
+	models.DeleteUser(user)
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "delete user successful！",
+	})
+}
+
+// FindUserByNameAndPwd
+// @Summary 登录
+// @Tags 用户模块
+// @param name query string false "用户名"
+// @param password query string false "密码"
+// @Success 200 {string} json{"code","message"}
+// @Router /user/findUserByNameAndPwd [post]
+func FindUserByNameAndPwd(c *gin.Context) {
+	name := c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
+	u := models.FindUserByName(name)
+	if u.Name == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "用户名或密码错误",
+		})
+	}
+	flag := utils.ValidPassword(password, u.Salt, u.PassWord)
+	if !flag {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "用户名或密码错误",
+		})
+	}
+	password = utils.MakePassword(password, u.Salt)
+	user := models.FindUserByNameAndPwd(name, password)
+	//token加密
+	str := fmt.Sprintf("%d", time.Now().Unix())
+	temp := utils.MD5Encode(str)
+	global.DB.Model(&user).Where("id = ?", user.ID).Update("identity", temp)
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "login successful！",
+		"data":    user,
+	})
 }

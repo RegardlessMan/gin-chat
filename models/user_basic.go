@@ -57,3 +57,9 @@ func UpdateUser(user UserBasic) *gorm.DB {
 func DeleteUser(user UserBasic) *gorm.DB {
 	return global.DB.Delete(&user)
 }
+
+func FindUserByNameAndPwd(name string, password string) UserBasic {
+	user := UserBasic{}
+	global.DB.Where("name = ? and pass_word=?", name, password).First(&user)
+	return user
+}
